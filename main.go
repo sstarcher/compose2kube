@@ -26,6 +26,7 @@ import (
 
 	"github.com/docker/libcompose/project"
 	"k8s.io/kubernetes/pkg/api"
+	"k8s.io/kubernetes/pkg/api/resource"
 	"k8s.io/kubernetes/pkg/api/unversioned"
 )
 
@@ -55,33 +56,45 @@ func main() {
 	}
 
 	for name, service := range p.Configs {
-		rc := &api.ReplicationController{
+		pod := &api.Pod{
 			TypeMeta: unversioned.TypeMeta{
-				Kind:       "ReplicationController",
+				Kind:       "Pod",
 				APIVersion: "v1",
 			},
 			ObjectMeta: api.ObjectMeta{
 				Name:   name,
 				Labels: map[string]string{"service": name},
 			},
-			Spec: api.ReplicationControllerSpec{
-				Replicas: 1,
-				Selector: map[string]string{"service": name},
-				Template: &api.PodTemplateSpec{
-					ObjectMeta: api.ObjectMeta{
-						Labels: map[string]string{"service": name},
-					},
-					Spec: api.PodSpec{
-						Containers: []api.Container{
-							{
-								Name:  name,
-								Image: service.Image,
-							},
+			Spec: api.PodSpec{
+				Containers: []api.Container{
+					{
+						Name:  name,
+						Image: service.Image,
+						Args:  service.Command.Slice(),
+						Resources: api.ResourceRequirements{
+							Limits: api.ResourceList{},
 						},
 					},
 				},
 			},
 		}
+
+		if service.CpuShares != 0 {
+			pod.Spec.Containers[0].Resources.Limits[api.ResourceCPU] = *resource.NewQuantity(service.CpuShares, "decimalSI")
+		}
+
+		if service.MemLimit != 0 {
+			pod.Spec.Containers[0].Resources.Limits[api.ResourceMemory] = *resource.NewQuantity(service.MemLimit, "decimalSI")
+		}
+
+		// Configure the environment variables
+		var environment []api.EnvVar
+		for _, envs := range service.Environment.Slice() {
+			value := strings.Split(envs, "=")
+			environment = append(environment, api.EnvVar{Name: value[0], Value: value[1]})
+		}
+
+		pod.Spec.Containers[0].Env = environment
 
 		// Configure the container ports.
 		var ports []api.ContainerPort
@@ -98,32 +111,68 @@ func main() {
 			ports = append(ports, api.ContainerPort{ContainerPort: portNumber})
 		}
 
-		rc.Spec.Template.Spec.Containers[0].Ports = ports
+		pod.Spec.Containers[0].Ports = ports
 
 		// Configure the container restart policy.
+		var (
+			rc      *api.ReplicationController
+			objType string
+			data    []byte
+			err     error
+		)
 		switch service.Restart {
 		case "", "always":
-			rc.Spec.Template.Spec.RestartPolicy = api.RestartPolicyAlways
-		case "no":
-			rc.Spec.Template.Spec.RestartPolicy = api.RestartPolicyNever
+			objType = "rc"
+			rc = replicationController(name, pod)
+			pod.Spec.RestartPolicy = api.RestartPolicyAlways
+			data, err = json.MarshalIndent(rc, "", "  ")
+		case "no", "false":
+			objType = "pod"
+			pod.Spec.RestartPolicy = api.RestartPolicyNever
+			data, err = json.MarshalIndent(pod, "", "  ")
 		case "on-failure":
-			rc.Spec.Template.Spec.RestartPolicy = api.RestartPolicyOnFailure
+			objType = "rc"
+			rc = replicationController(name, pod)
+			pod.Spec.RestartPolicy = api.RestartPolicyOnFailure
+			data, err = json.MarshalIndent(rc, "", "  ")
 		default:
 			log.Fatalf("Unknown restart policy %s for service %s", service.Restart, name)
 		}
 
-		data, err := json.MarshalIndent(rc, "", "  ")
 		if err != nil {
 			log.Fatalf("Failed to marshal the replication controller: %v", err)
 		}
 
 		// Save the replication controller for the Docker compose service to the
 		// configs directory.
-		outputFileName := fmt.Sprintf("%s-rc.yaml", name)
+		outputFileName := fmt.Sprintf("%s-%s.yaml", name, objType)
 		outputFilePath := filepath.Join(outputDir, outputFileName)
 		if err := ioutil.WriteFile(outputFilePath, data, 0644); err != nil {
 			log.Fatalf("Failed to write replication controller %s: %v", outputFileName, err)
 		}
 		fmt.Println(outputFilePath)
+	}
+}
+
+func replicationController(name string, pod *api.Pod) *api.ReplicationController {
+	return &api.ReplicationController{
+		TypeMeta: unversioned.TypeMeta{
+			Kind:       "ReplicationController",
+			APIVersion: "v1",
+		},
+		ObjectMeta: api.ObjectMeta{
+			Name:   name,
+			Labels: map[string]string{"service": name},
+		},
+		Spec: api.ReplicationControllerSpec{
+			Replicas: 1,
+			Selector: map[string]string{"service": name},
+			Template: &api.PodTemplateSpec{
+				ObjectMeta: api.ObjectMeta{
+					Labels: map[string]string{"service": name},
+				},
+				Spec: pod.Spec,
+			},
+		},
 	}
 }

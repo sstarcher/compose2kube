@@ -11,7 +11,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package main
+package main // import "github.com/sstarcher/compose2kube"
 
 import (
 	"encoding/json"
@@ -79,12 +79,22 @@ func main() {
 			},
 		}
 
-		if service.CpuShares != 0 {
-			pod.Spec.Containers[0].Resources.Limits[api.ResourceCPU] = *resource.NewQuantity(service.CpuShares, "decimalSI")
+		if service.CPUShares != 0 {
+			pod.Spec.Containers[0].Resources.Limits[api.ResourceCPU] = *resource.NewQuantity(service.CPUShares, "decimalSI")
 		}
 
 		if service.MemLimit != 0 {
 			pod.Spec.Containers[0].Resources.Limits[api.ResourceMemory] = *resource.NewQuantity(service.MemLimit, "decimalSI")
+		}
+
+		// If Privileged, create a SecurityContext and configure it
+		if service.Privileged == true{
+			priv := true
+			context := &api.SecurityContext{
+				Capabilities: &api.Capabilities{},
+				Privileged: &priv,
+			}
+			pod.Spec.Containers[0].SecurityContext = context
 		}
 
 		// Configure the environment variables

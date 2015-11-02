@@ -1,0 +1,5 @@
+dockeraudit:
+  image: nyxcharon/docker-audit
+  privileged: true
+  entrypoint: /usr/local/bin/wrapdocker
+  command: docker-audit -v -h "http://hound.cluster.private/api/v1/search?stats=fosho&repos=*&rng=%3A20&q=image%3A%5Cs%2B&i=nope&files=yaml"

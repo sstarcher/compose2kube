@@ -1,0 +1,7 @@
+import:
+- package: github.com/docker/docker
+  version: 1.9.0
+- package: github.com/docker/libcontainer
+  version: a0371eca6b64edf1df7f5fd77678e5409a888315
+- package: k8s.io/kubernetes
+  version: 1.1.7

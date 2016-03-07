@@ -2,8 +2,10 @@ echo:
   image: debian
   command: echo hello
   restart: no
-  environment: 
+  environment:
     test: hmm
     derp: hmm2
+    mem_limit: '123000'
+    cpu_shares: '123'
   cpu_shares: 123
   mem_limit: 123000

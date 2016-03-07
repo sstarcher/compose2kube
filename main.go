@@ -11,7 +11,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package main // import "github.com/sstarcher/compose2kube"
+package main
 
 import (
 	"encoding/json"
@@ -44,8 +44,8 @@ func main() {
 	flag.Parse()
 
 	p := project.NewProject(&project.Context{
-		ProjectName: "kube",
-		ComposeFile: composeFile,
+		ProjectName:  "kube",
+		ComposeFiles: []string{composeFile},
 	})
 
 	if err := p.Parse(); err != nil {
@@ -80,7 +80,7 @@ func main() {
 		}
 
 		if service.CPUShares != 0 {
-			pod.Spec.Containers[0].Resources.Limits[api.ResourceCPU] = *resource.NewQuantity(service.CPUShares, "decimalSI")
+			pod.Spec.Containers[0].Resources.Limits[api.ResourceCPU] = *resource.NewMilliQuantity(service.CPUShares, resource.BinarySI)
 		}
 
 		if service.MemLimit != 0 {
@@ -88,11 +88,11 @@ func main() {
 		}
 
 		// If Privileged, create a SecurityContext and configure it
-		if service.Privileged == true{
+		if service.Privileged == true {
 			priv := true
 			context := &api.SecurityContext{
 				Capabilities: &api.Capabilities{},
-				Privileged: &priv,
+				Privileged:   &priv,
 			}
 			pod.Spec.Containers[0].SecurityContext = context
 		}

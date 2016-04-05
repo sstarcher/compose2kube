@@ -1,8 +1,16 @@
-hash: 73db383744d87207ccc3c524262a15a5b39be8c755354c7791e6cbda3a7b2b33
-updated: 2016-04-05T18:22:26.083102963-04:00
+hash: 9697e9858d9ca16c0249abe8f5dafb76cd7b49aa6e6fe00e5209876ba60dd074
+updated: 2016-04-05T18:48:35.649756625-04:00
 imports:
+- name: github.com/cloudfoundry-incubator/candiedyaml
+  version: 646fd8fe27c55af8231d9f2524f5dc88f9dfe02d
+- name: github.com/davecgh/go-spew
+  version: 5215b55f46b2b919f50a1df0eaa5886afe4e3b3d
+  subpackages:
+  - spew
 - name: github.com/docker/docker
   version: d12ea79c9de6d144ce6bc7ccfe41c507cca6fd35
+- name: github.com/docker/go-units
+  version: 5d2041e26a699eaca682e2ea41c8f891e1060444
 - name: github.com/docker/libcompose
   version: c12bd12c983e83668eef751dca5ac06acd4a4fcd
   subpackages:
@@ -13,8 +21,34 @@ imports:
   version: 3f9db97f856818214da2e1057f8ad84803971cff
 - name: github.com/ghodss/yaml
   version: 1a6f069841556a7bcaff4a397ca6e8328d266c2f
+- name: github.com/golang/glog
+  version: 23def4e6c14b4da8ac2ed8007337bc5eb5007998
+- name: github.com/google/gofuzz
+  version: fd52762d25a41827db7ef64c43756fd4b9f7e382
+- name: github.com/juju/ratelimit
+  version: 77ed1c8a01217656d2080ad51981f6e99adaa177
+- name: github.com/opencontainers/runc
+  version: 3f4f4420fded8d19cf29a1b6a631b7e31f7f9c68
+  subpackages:
+  - libcontainer/cgroups/fs
+- name: github.com/pborman/uuid
+  version: c55201b036063326c5b1b89ccfe45a184973d073
+- name: github.com/Sirupsen/logrus
+  version: 4b6ea7319e214d98c938f12692336f7ca9348d6b
+- name: github.com/spf13/pflag
+  version: 7f60f83a2c81bc3c3c0d5297f61ddfa68da9d3b7
+- name: github.com/ugorji/go
+  version: a396ed22fc049df733440d90efe17475e3929ccb
+  subpackages:
+  - codec
+- name: golang.org/x/net
+  version: 318395d8b12f5dd0f1b7cd0fbb95195f49acb0f9
+  subpackages:
+  - context
 - name: k8s.io/kubernetes
   version: 5cb86ee022267586db386f62781338b0483733b3
   subpackages:
   - pkg/apis/batch/v1
+- name: speter.net/go/exp/math/dec/inf
+  version: 42ca6cd68aa922bc3f32f1e056e61b65945d9ad7
 devImports: []

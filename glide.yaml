@@ -12,3 +12,24 @@ import:
   subpackages:
   - pkg/apis/batch/v1
 - package: github.com/ghodss/yaml
+- package: github.com/cloudfoundry-incubator/candiedyaml
+- package: github.com/davecgh/go-spew
+  subpackages:
+  - spew
+- package: github.com/golang/glog
+- package: speter.net/go/exp/math/dec/inf
+- package: golang.org/x/net
+  subpackages:
+  - context
+- package: github.com/google/gofuzz
+- package: github.com/juju/ratelimit
+- package: github.com/ugorji/go
+  subpackages:
+  - codec
+- package: github.com/pborman/uuid
+- package: github.com/spf13/pflag
+- package: github.com/opencontainers/runc
+  subpackages:
+  - libcontainer/cgroups/fs
+- package: github.com/Sirupsen/logrus
+- package: github.com/docker/go-units

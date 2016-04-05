@@ -64,7 +64,7 @@ func main() {
 		pod := &api.PodSpec{
 			Containers: []api.Container{
 				{
-					Name:  name,
+					Name:  strings.ToLower(name),
 					Image: service.Image,
 					Args:  service.Command.Slice(),
 					Resources: api.ResourceRequirements{
@@ -186,7 +186,7 @@ func job(name string, pod *api.PodSpec) *batchv1.Job {
 			APIVersion: "batch/v1",
 		},
 		ObjectMeta: api.ObjectMeta{
-			Name: name,
+			Name: strings.ToLower(name),
 		},
 		Spec: batchv1.JobSpec{
 			Template: api.PodTemplateSpec{
@@ -207,7 +207,7 @@ func replicationController(name string, pod *api.PodSpec) *api.ReplicationContro
 			APIVersion: "v1",
 		},
 		ObjectMeta: api.ObjectMeta{
-			Name: name,
+			Name: strings.ToLower(name),
 		},
 		Spec: api.ReplicationControllerSpec{
 			Replicas: &replicas,

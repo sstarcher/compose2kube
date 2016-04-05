@@ -1,4 +1,4 @@
-failure:
+Failure:
   image: debian
   command: echo hello
   restart: 'on-failure'

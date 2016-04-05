@@ -1,103 +1,20 @@
-hash: 6de89912aa4b58a62408d6cb2969a246e0d12d36f82c7ec2cc7e3ddbb62dfe06
-updated: 2016-04-05T17:29:25.287559445-04:00
+hash: 73db383744d87207ccc3c524262a15a5b39be8c755354c7791e6cbda3a7b2b33
+updated: 2016-04-05T18:22:26.083102963-04:00
 imports:
-- name: github.com/cloudfoundry-incubator/candiedyaml
-  version: 646fd8fe27c55af8231d9f2524f5dc88f9dfe02d
-- name: github.com/davecgh/go-spew
-  version: 3e6e67c4dcea3ac2f25fd4731abc0e1deaf36216
-  subpackages:
-  - spew
 - name: github.com/docker/docker
-  version: 76d6bc9a9f1690e16f3721ba165364688b626de2
-  subpackages:
-  - runconfig
-  - opts
-  - pkg/mflag
-  - pkg/nat
-  - pkg/parsers
-  - pkg/signal
-  - pkg/stringutils
-  - pkg/ulimit
-  - pkg/units
-  - volume
-  - pkg/homedir
-  - pkg/random
-  - pkg/mount
+  version: d12ea79c9de6d144ce6bc7ccfe41c507cca6fd35
 - name: github.com/docker/libcompose
-  version: fdcddd59230401dd3c77bf6d5fb07be4fda28840
+  version: c12bd12c983e83668eef751dca5ac06acd4a4fcd
   subpackages:
   - project
-  - logger
-  - utils
 - name: github.com/docker/libcontainer
   version: 5dc7ba0f24332273461e45bc49edcb4d5aa6c44c
 - name: github.com/flynn/go-shlex
   version: 3f9db97f856818214da2e1057f8ad84803971cff
 - name: github.com/ghodss/yaml
   version: 1a6f069841556a7bcaff4a397ca6e8328d266c2f
-- name: github.com/golang/glog
-  version: 44145f04b68cf362d9c4df2182967c2275eaefed
-- name: github.com/google/gofuzz
-  version: bbcb9da2d746f8bdbd6a936686a0a6067ada0ec5
-- name: github.com/juju/ratelimit
-  version: 77ed1c8a01217656d2080ad51981f6e99adaa177
-- name: github.com/opencontainers/runc
-  version: b40c7901845dcec5950ecb37cb9de178fc2c0604
-  subpackages:
-  - libcontainer/user
-  - libcontainer/cgroups/fs
-  - libcontainer/configs
-  - libcontainer/cgroups
-  - libcontainer/system
-- name: github.com/pborman/uuid
-  version: ca53cad383cad2479bbba7f7a1a05797ec1386e4
-- name: github.com/Sirupsen/logrus
-  version: 26709e2714106fb8ad40b773b711ebce25b78914
-- name: github.com/spf13/pflag
-  version: 08b1a584251b5b62f458943640fc8ebd4d50aaa5
-- name: github.com/ugorji/go
-  version: f4485b318aadd133842532f841dc205a8e339d74
-  subpackages:
-  - codec
-- name: golang.org/x/net
-  version: 3a29182c25eeabbaaf94daaeecbc7823d86261e7
-  subpackages:
-  - context
-- name: gopkg.in/yaml.v2
-  version: 49c95bdc21843256fb6c4e0d370a05f24a0bf213
 - name: k8s.io/kubernetes
   version: 5cb86ee022267586db386f62781338b0483733b3
   subpackages:
-  - pkg/api/resource
-  - pkg/api/unversioned
-  - pkg/api/v1
   - pkg/apis/batch/v1
-  - pkg/labels
-  - pkg/util/sets
-  - pkg/api
-  - pkg/conversion
-  - pkg/runtime
-  - pkg/types
-  - pkg/util
-  - pkg/util/intstr
-  - pkg/util/parsers
-  - pkg/apis/extensions
-  - pkg/util/validation
-  - pkg/api/meta
-  - pkg/auth/user
-  - pkg/fields
-  - pkg/runtime/serializer
-  - pkg/util/rand
-  - third_party/forked/reflect
-  - pkg/conversion/queryparams
-  - pkg/util/errors
-  - pkg/util/integer
-  - pkg/util/wait
-  - pkg/runtime/serializer/json
-  - pkg/runtime/serializer/recognizer
-  - pkg/runtime/serializer/versioning
-  - pkg/util/runtime
-  - pkg/util/yaml
-- name: speter.net/go/exp/math/dec/inf
-  version: 42ca6cd68aa922bc3f32f1e056e61b65945d9ad7
 devImports: []

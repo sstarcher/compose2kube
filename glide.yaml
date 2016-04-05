@@ -1,9 +1,14 @@
+package: ""
 import:
 - package: github.com/docker/docker
-  version: 1.9.0
+  version: 1.8.1
 - package: github.com/flynn/go-shlex
 - package: github.com/docker/libcompose
-  version: fdcddd59230401dd3c77bf6d5fb07be4fda28840
+  subpackages:
+  - project
 - package: github.com/docker/libcontainer
 - package: k8s.io/kubernetes
   version: 1.2.0
+  subpackages:
+  - pkg/apis/batch/v1
+- package: github.com/ghodss/yaml

@@ -1,7 +1,7 @@
-echo:
+failure:
   image: debian
   command: echo hello
-  restart: 'always'
+  restart: 'on-failure'
   environment:
     test: hmm
     derp: hmm2

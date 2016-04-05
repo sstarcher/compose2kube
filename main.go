@@ -14,9 +14,9 @@ limitations under the License.
 package main
 
 import (
-	"encoding/json"
 	"flag"
 	"fmt"
+	"github.com/ghodss/yaml"
 	"io/ioutil"
 	"log"
 	"os"
@@ -25,27 +25,32 @@ import (
 	"strings"
 
 	"github.com/docker/libcompose/project"
-	"k8s.io/kubernetes/pkg/api"
 	"k8s.io/kubernetes/pkg/api/resource"
 	"k8s.io/kubernetes/pkg/api/unversioned"
+	api "k8s.io/kubernetes/pkg/api/v1"
+	batchv1 "k8s.io/kubernetes/pkg/apis/batch/v1"
 )
 
 var (
-	composeFile string
-	outputDir   string
+	composeFile  string
+	outputDir    string
+	pullPolicy   string
+	nodeSelector string
 )
 
 func init() {
 	flag.StringVar(&composeFile, "compose-file", "docker-compose.yml", "Specify an alternate compose `file`")
 	flag.StringVar(&outputDir, "output-dir", "output", "Kubernetes configs output `directory`")
+	flag.StringVar(&pullPolicy, "pull-policy", "", "Image Pull policy")
+	flag.StringVar(&nodeSelector, "node-selector", "", "Node Selector in the format of 'key=value;key2=value2'")
 }
 
 func main() {
 	flag.Parse()
 
 	p := project.NewProject(&project.Context{
-		ProjectName: "kube",
-		ComposeFile: composeFile,
+		ProjectName:  "kube",
+		ComposeFiles: []string{composeFile},
 	})
 
 	if err := p.Parse(); err != nil {
@@ -56,35 +61,25 @@ func main() {
 	}
 
 	for name, service := range p.Configs {
-		pod := &api.Pod{
-			TypeMeta: unversioned.TypeMeta{
-				Kind:       "Pod",
-				APIVersion: "v1",
-			},
-			ObjectMeta: api.ObjectMeta{
-				Name:   name,
-				Labels: map[string]string{"service": name},
-			},
-			Spec: api.PodSpec{
-				Containers: []api.Container{
-					{
-						Name:  name,
-						Image: service.Image,
-						Args:  service.Command.Slice(),
-						Resources: api.ResourceRequirements{
-							Limits: api.ResourceList{},
-						},
+		pod := &api.PodSpec{
+			Containers: []api.Container{
+				{
+					Name:  name,
+					Image: service.Image,
+					Args:  service.Command.Slice(),
+					Resources: api.ResourceRequirements{
+						Limits: api.ResourceList{},
 					},
 				},
 			},
 		}
 
 		if service.CPUShares != 0 {
-			pod.Spec.Containers[0].Resources.Limits[api.ResourceCPU] = *resource.NewMilliQuantity(service.CPUShares, resource.BinarySI)
+			pod.Containers[0].Resources.Limits[api.ResourceCPU] = *resource.NewMilliQuantity(service.CPUShares, resource.BinarySI)
 		}
 
 		if service.MemLimit != 0 {
-			pod.Spec.Containers[0].Resources.Limits[api.ResourceMemory] = *resource.NewQuantity(service.MemLimit, "decimalSI")
+			pod.Containers[0].Resources.Limits[api.ResourceMemory] = *resource.NewQuantity(service.MemLimit, "decimalSI")
 		}
 
 		// If Privileged, create a SecurityContext and configure it
@@ -94,7 +89,30 @@ func main() {
 				Capabilities: &api.Capabilities{},
 				Privileged:   &priv,
 			}
-			pod.Spec.Containers[0].SecurityContext = context
+			pod.Containers[0].SecurityContext = context
+		}
+
+		if pullPolicy != "" {
+			switch pullPolicy {
+			case "", "IfNotPresent":
+				pod.Containers[0].ImagePullPolicy = api.PullIfNotPresent
+			case "Always":
+				pod.Containers[0].ImagePullPolicy = api.PullAlways
+			case "Never":
+				pod.Containers[0].ImagePullPolicy = api.PullNever
+			default:
+				log.Fatalf("Unknown pull policy %s for service %s", pullPolicy, name)
+			}
+		}
+
+		if nodeSelector != "" {
+			ss := strings.Split(nodeSelector, ";")
+			m := make(map[string]string)
+			for _, pair := range ss {
+				z := strings.Split(pair, "=")
+				m[z[0]] = z[1]
+			}
+			pod.NodeSelector = m
 		}
 
 		// Configure the environment variables
@@ -104,7 +122,7 @@ func main() {
 			environment = append(environment, api.EnvVar{Name: value[0], Value: value[1]})
 		}
 
-		pod.Spec.Containers[0].Env = environment
+		pod.Containers[0].Env = environment
 
 		// Configure the container ports.
 		var ports []api.ContainerPort
@@ -114,18 +132,17 @@ func main() {
 				parts := strings.Split(port, ":")
 				port = parts[1]
 			}
-			portNumber, err := strconv.Atoi(port)
+			portNumber, err := strconv.ParseInt(port, 10, 32)
 			if err != nil {
 				log.Fatalf("Invalid container port %s for service %s", port, name)
 			}
-			ports = append(ports, api.ContainerPort{ContainerPort: portNumber})
+			ports = append(ports, api.ContainerPort{ContainerPort: int32(portNumber)})
 		}
 
-		pod.Spec.Containers[0].Ports = ports
+		pod.Containers[0].Ports = ports
 
 		// Configure the container restart policy.
 		var (
-			rc      *api.ReplicationController
 			objType string
 			data    []byte
 			err     error
@@ -133,55 +150,72 @@ func main() {
 		switch service.Restart {
 		case "", "always":
 			objType = "rc"
-			rc = replicationController(name, pod)
-			pod.Spec.RestartPolicy = api.RestartPolicyAlways
-			data, err = json.MarshalIndent(rc, "", "  ")
+			pod.RestartPolicy = api.RestartPolicyAlways
+			data, err = yaml.Marshal(replicationController(name, pod))
 		case "no", "false":
 			objType = "pod"
-			pod.Spec.RestartPolicy = api.RestartPolicyNever
-			data, err = json.MarshalIndent(pod, "", "  ")
+			pod.RestartPolicy = api.RestartPolicyNever
+			data, err = yaml.Marshal(job(name, pod))
 		case "on-failure":
-			objType = "rc"
-			rc = replicationController(name, pod)
-			pod.Spec.RestartPolicy = api.RestartPolicyOnFailure
-			data, err = json.MarshalIndent(rc, "", "  ")
+			objType = "job"
+			pod.RestartPolicy = api.RestartPolicyOnFailure
+			data, err = yaml.Marshal(job(name, pod))
 		default:
 			log.Fatalf("Unknown restart policy %s for service %s", service.Restart, name)
 		}
 
 		if err != nil {
-			log.Fatalf("Failed to marshal the replication controller: %v", err)
+			log.Fatalf("Failed to marshal: %v", err)
 		}
 
-		// Save the replication controller for the Docker compose service to the
+		// Save the job controller for the Docker compose service to the
 		// configs directory.
 		outputFileName := fmt.Sprintf("%s-%s.yaml", name, objType)
 		outputFilePath := filepath.Join(outputDir, outputFileName)
 		if err := ioutil.WriteFile(outputFilePath, data, 0644); err != nil {
-			log.Fatalf("Failed to write replication controller %s: %v", outputFileName, err)
+			log.Fatalf("Failed to write job controller %s: %v", outputFileName, err)
 		}
 		fmt.Println(outputFilePath)
 	}
 }
 
-func replicationController(name string, pod *api.Pod) *api.ReplicationController {
+func job(name string, pod *api.PodSpec) *batchv1.Job {
+	return &batchv1.Job{
+		TypeMeta: unversioned.TypeMeta{
+			Kind:       "Job",
+			APIVersion: "batch/v1",
+		},
+		ObjectMeta: api.ObjectMeta{
+			Name: name,
+		},
+		Spec: batchv1.JobSpec{
+			Template: api.PodTemplateSpec{
+				ObjectMeta: api.ObjectMeta{
+					Labels: map[string]string{"service": name},
+				},
+				Spec: *pod,
+			},
+		},
+	}
+}
+
+func replicationController(name string, pod *api.PodSpec) *api.ReplicationController {
+	var replicas int32 = 1
 	return &api.ReplicationController{
 		TypeMeta: unversioned.TypeMeta{
 			Kind:       "ReplicationController",
 			APIVersion: "v1",
 		},
 		ObjectMeta: api.ObjectMeta{
-			Name:   name,
-			Labels: map[string]string{"service": name},
+			Name: name,
 		},
 		Spec: api.ReplicationControllerSpec{
-			Replicas: 1,
-			Selector: map[string]string{"service": name},
+			Replicas: &replicas,
 			Template: &api.PodTemplateSpec{
 				ObjectMeta: api.ObjectMeta{
 					Labels: map[string]string{"service": name},
 				},
-				Spec: pod.Spec,
+				Spec: *pod,
 			},
 		},
 	}
